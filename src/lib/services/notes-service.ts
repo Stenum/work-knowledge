@@ -1,7 +1,5 @@
-import { ZepClient } from "@/lib/clients/zep";
-
-const zepClient = new ZepClient();
+import { sharedZepClient } from "@/lib/clients/zep";
 
 export async function listNotes() {
-  return zepClient.fetchNotes();
+  return sharedZepClient.fetchNotes();
 }
