@@ -1,20 +1,19 @@
 # Component requirements: /api/webhooks/graph
 
 ## Purpose
-Receives Graph webhook notifications and forwards them to the ingestion pipeline.
+Receive Microsoft Graph change notifications, validate payloads, and enqueue normalized ingestion documents for Zep.
 
 ## Inputs/Outputs
-- **POST /api/webhooks/graph** accepts the standard Graph notification envelope with a `value` array.
-- Responds with `{ received: true }` after logging/queuing events.
+- **POST /api/webhooks/graph** accepts Graph change notifications shaped as `{ value: GraphWebhookEvent[] }`.
+- Returns `{ received: boolean, results: [...] }` confirming ingestion per event.
 
 ## External dependencies
-- Graph client stub to enqueue events.
-- Zod schema to validate incoming notifications.
+- `@/lib/services/graph-client` for resource normalization and ingestion.
 
 ## EARS coverage
-- REQ-H-001, REQ-H-002, REQ-H-010, REQ-C-010, REQ-C-011, REQ-C-012, REQ-C-013, REQ-C-050.
+- REQ-H-001, REQ-H-002, REQ-H-010, REQ-C-010, REQ-C-011, REQ-C-012, REQ-C-013, REQ-I-001.
 
 ## Traceability
-- Implementation: `route.ts` (validates and logs webhook deliveries).
-- Dependencies: `@/lib/services/graph-client`, `@/lib/schemas/webhook`.
-- Assumptions: This MVP simply logs events; persistence and replay queues would be added later.
+- Implementation: `route.ts` (payload validation, correlation logging, per-event ingestion).
+- Dependencies: `@/lib/schemas/webhook`, `@/lib/services/graph-client`.
+- Assumptions: Client state and authentication are handled upstream; this endpoint focuses on validation and ingestion fan-out.

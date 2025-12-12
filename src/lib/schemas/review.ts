@@ -6,11 +6,15 @@ export const reviewQuerySchema = z.object({
 
 export const beliefSchema = z.object({
   id: z.string(),
-  text: z.string(),
+  content: z.string(),
   source: z.string(),
+  sourceId: z.string(),
   timestamp: z.string(),
   ingestedAt: z.string(),
   status: z.string(),
+  participants: z.array(z.string()).optional(),
+  subject: z.string().optional(),
+  url: z.string().optional(),
 });
 
 export const reviewResponseSchema = z.object({

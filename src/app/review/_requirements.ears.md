@@ -1,20 +1,20 @@
 # Component requirements: Review page
 
 ## Purpose
-Displays beliefs retrieved from the backend and lets the user accept or reject them for validation.
+Surface the belief review UI where users can filter by topic, accept/reject beliefs, and submit corrections.
 
 ## Inputs/Outputs
-- Fetches beliefs from `/api/review` (optionally filtered by topic).
-- Posts validation actions to `/api/validate`.
+- Renders `BeliefReviewList` that calls `/api/review` and `/api/validate`.
+- Displays validation results and errors from backend calls.
 
 ## External dependencies
-- Review and validation APIs.
-- Tailwind + shadcn components.
+- `/api/review` for retrieval.
+- `/api/validate` for status updates.
+- shadcn/ui components.
 
 ## EARS coverage
-- REQ-G-001, REQ-G-004, REQ-F-001, REQ-F-002, REQ-F-010, REQ-F-011.
+- REQ-G-001, REQ-G-004, REQ-F-001, REQ-F-002, REQ-F-010, REQ-F-011, REQ-F-012.
 
 ## Traceability
-- Implementation: `page.tsx` consuming `BeliefReviewList`.
-- Dependencies: `@/components/review/belief-review-list`.
-- Assumptions: Corrections are limited to accept/reject in the UI; free-text correction can be added later.
+- Implementation: `page.tsx` referencing `@/components/review/belief-review-list`.
+- Assumptions: Corrections are optional free text applied directly to the belief content.

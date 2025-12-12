@@ -3,7 +3,7 @@ import { z } from "zod";
 export const validateBeliefSchema = z.object({
   beliefId: z.string().min(1),
   action: z.enum(["accept", "reject", "correct"]),
-  correctedText: z.string().optional(),
+  correctedText: z.string().trim().optional(),
 });
 
 export const validateBeliefResponseSchema = z.object({
@@ -11,7 +11,7 @@ export const validateBeliefResponseSchema = z.object({
   belief: z
     .object({
       id: z.string(),
-      text: z.string(),
+      content: z.string(),
       status: z.string(),
     })
     .nullable(),

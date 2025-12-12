@@ -1,20 +1,19 @@
 # Component requirements: /api/validate
 
 ## Purpose
-Applies validation actions (accept, reject, correct) to beliefs stored in Zep.
+Apply Accept/Reject/Correct actions to beliefs and persist the updated status back to memory/Zep.
 
 ## Inputs/Outputs
-- **POST /api/validate** accepts `{ beliefId: string, action: 'accept'|'reject'|'correct', correctedText?: string }`.
-- Returns `{ success: boolean, belief: Belief | null }` describing the update result.
+- **POST /api/validate** accepts `{ beliefId, action: 'accept'|'reject'|'correct', correctedText? }`.
+- Returns `{ success: boolean, belief: { id, content, status } | null }`.
 
 ## External dependencies
-- Zep client stub for updating belief state.
-- Zod schema for validation.
+- `@/lib/services/zep-client` for validation updates.
 
 ## EARS coverage
-- REQ-H-001, REQ-H-002, REQ-H-010, REQ-F-010, REQ-F-011, REQ-F-012.
+- REQ-H-001, REQ-H-002, REQ-H-010, REQ-F-010, REQ-F-011, REQ-F-012, REQ-I-002.
 
 ## Traceability
-- Implementation: `route.ts` (validates payload, applies updates via Zep client).
-- Dependencies: `@/lib/schemas/validate`, `@/lib/services/zep-client`.
-- Assumptions: Corrections immediately set status to accepted in this MVP.
+- Implementation: `route.ts` (Zod validation, correlation logging, status updates).
+- Dependencies: `@/lib/services/zep-client`, `@/lib/schemas/validate`.
+- Assumptions: A corrected text marks the belief as `corrected` and persists content changes.

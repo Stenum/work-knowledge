@@ -1,90 +1,105 @@
 import { type ManualIngestRequest } from "@/lib/schemas/ingest";
 import { type ValidateBeliefRequest } from "@/lib/schemas/validate";
+import { memoryStore, type IngestedDocument } from "@/lib/services/memory-store";
 
-type Source = "teams" | "email" | "calendar" | "manual";
+const ZEP_BASE_URL = process.env.ZEP_API_URL;
+const ZEP_API_KEY = process.env.ZEP_API_KEY;
 
-type BeliefStatus = "pending" | "accepted" | "rejected";
+async function callZep(endpoint: string, payload: unknown) {
+  if (!ZEP_BASE_URL || !ZEP_API_KEY) {
+    return null;
+  }
 
-export interface Belief {
-  id: string;
-  text: string;
-  source: Source;
-  sourceId: string;
-  timestamp: string;
-  ingestedAt: string;
-  participants?: string[];
-  subject?: string;
-  url?: string;
-  status: BeliefStatus;
-}
+  const response = await fetch(`${ZEP_BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${ZEP_API_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
 
-const beliefs: Belief[] = [
-  {
-    id: "seed-1",
-    text: "Weekly sync with the design team is scheduled for Fridays at 10am.",
-    source: "calendar",
-    sourceId: "cal-1",
-    timestamp: new Date().toISOString(),
-    ingestedAt: new Date().toISOString(),
-    participants: ["ask@example.com", "design@example.com"],
-    status: "pending",
-  },
-  {
-    id: "seed-2",
-    text: "Ask committed to sharing the Q4 hiring plan with leadership.",
-    source: "teams",
-    sourceId: "teams-1",
-    timestamp: new Date().toISOString(),
-    ingestedAt: new Date().toISOString(),
-    participants: ["ask@example.com", "leadership@example.com"],
-    status: "pending",
-  },
-];
+  if (!response.ok) {
+    throw new Error(`Zep API error: ${response.status}`);
+  }
 
-function addBelief(belief: Belief) {
-  beliefs.unshift(belief);
+  return response.json();
 }
 
 export async function ingestManualNote(request: ManualIngestRequest) {
   const now = new Date().toISOString();
-  const belief: Belief = {
+  const document: IngestedDocument = {
     id: crypto.randomUUID(),
-    text: request.note,
     source: "manual",
     sourceId: crypto.randomUUID(),
+    version: "1",
     timestamp: now,
     ingestedAt: now,
+    content: request.note,
     status: "pending",
   };
-  addBelief(belief);
-  return belief;
+
+  try {
+    await callZep("/ingest", { documents: [document] }); // REQ-D-001
+    memoryStore.upsert(document);
+  } catch (error) {
+    memoryStore.enqueue(document, crypto.randomUUID(), error instanceof Error ? error.message : undefined); // REQ-C-040
+  }
+
+  return document;
 }
 
-export async function queryMemory(topic?: string) {
-  if (!topic) return beliefs;
-  return beliefs.filter((belief) => belief.text.toLowerCase().includes(topic.toLowerCase()));
+export async function ingestFromGraph(document: IngestedDocument, correlationId: string) {
+  try {
+    await callZep("/ingest", { documents: [document] });
+    memoryStore.upsert(document);
+  } catch (error) {
+    memoryStore.enqueue(
+      document,
+      correlationId,
+      error instanceof Error ? error.message : "Unknown error"
+    );
+  }
+
+  return document;
 }
 
-export async function fetchRecentContext() {
-  return beliefs.slice(0, 3);
+export async function queryMemory(topic?: string, recentDays?: number) {
+  if (ZEP_BASE_URL && ZEP_API_KEY) {
+    try {
+      const response = await callZep("/search", { topic, recentDays }); // REQ-D-002
+      return (response?.results as IngestedDocument[]) ?? [];
+    } catch {
+      // Fall back to memory store
+    }
+  }
+  return memoryStore.query(topic, recentDays);
+}
+
+export async function fetchRecentContext(limit = 5) {
+  const stored = memoryStore.recent(limit);
+  if (stored.length > 0) return stored;
+  const queried = await queryMemory(undefined, 7);
+  return queried.slice(0, limit);
 }
 
 export async function validateBelief(request: ValidateBeliefRequest) {
-  const belief = beliefs.find((entry) => entry.id === request.beliefId);
-  if (!belief) return null;
+  const status =
+    request.action === "accept"
+      ? "accepted"
+      : request.action === "reject"
+        ? "rejected"
+        : "corrected";
 
-  if (request.action === "accept") {
-    belief.status = "accepted";
+  const updated = memoryStore.updateStatus(request.beliefId, status, request.correctedText);
+
+  if (updated && ZEP_BASE_URL && ZEP_API_KEY) {
+    try {
+      await callZep("/update", { id: updated.id, status, correctedText: request.correctedText }); // REQ-D-003
+    } catch (error) {
+      console.error("[zep] failed to push validation", error);
+    }
   }
 
-  if (request.action === "reject") {
-    belief.status = "rejected";
-  }
-
-  if (request.action === "correct" && request.correctedText) {
-    belief.text = request.correctedText;
-    belief.status = "accepted";
-  }
-
-  return belief;
+  return updated;
 }

@@ -1,20 +1,19 @@
 # Component requirements: Chat page
 
 ## Purpose
-Provides a chat UI for interacting with the assistant using the `/api/chat` endpoint.
+Provide the primary chat interface for interacting with the assistant, displaying responses and the context the assistant used.
 
 ## Inputs/Outputs
-- Sends user messages to `/api/chat`.
-- Renders assistant replies and system notices about memory retrieval.
+- Renders the `ChatInterface` component.
+- Sends messages to `/api/chat` and surfaces context returned by the backend.
 
 ## External dependencies
-- Chat route handler for responses.
-- Tailwind + shadcn components for layout and inputs.
+- BFF endpoint `/api/chat` validated with Zod.
+- UI primitives from shadcn/ui.
 
 ## EARS coverage
-- REQ-G-001, REQ-G-002, REQ-G-010, REQ-G-020, REQ-E-001.
+- REQ-G-001, REQ-G-002, REQ-G-010, REQ-G-020, REQ-E-020.
 
 ## Traceability
-- Implementation: `page.tsx` consuming `ChatInterface`.
-- Dependencies: `@/components/chat/chat-interface`.
-- Assumptions: Streaming is not yet wired; responses arrive as full payloads.
+- Implementation: `page.tsx` delegates to `ChatInterface` in `@/components/chat/chat-interface`.
+- Assumptions: Authentication handled globally; component focuses on UX and request orchestration.

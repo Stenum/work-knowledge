@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { reviewQuerySchema } from "@/lib/schemas/review";
+import { reviewQuerySchema, reviewResponseSchema } from "@/lib/schemas/review";
 import { queryMemory } from "@/lib/services/zep-client";
 
 export async function GET(request: NextRequest) {
-  const url = new URL(request.url);
-  const topic = url.searchParams.get("topic") ?? undefined;
-  const parsed = reviewQuerySchema.safeParse({ topic });
+  const query = reviewQuerySchema.safeParse({ topic: request.nextUrl.searchParams.get("topic") ?? undefined });
 
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid topic" }, { status: 400 }); // REQ-H-010
+  if (!query.success) {
+    return NextResponse.json({ error: query.error.flatten() }, { status: 400 });
   }
 
-  const beliefs = await queryMemory(parsed.data.topic);
-  return NextResponse.json({ beliefs });
+  const correlationId = crypto.randomUUID();
+  console.log(`[review] correlation=${correlationId}`); // REQ-I-002
+
+  const beliefs = await queryMemory(query.data.topic);
+  const payload = reviewResponseSchema.parse({ beliefs });
+  return NextResponse.json(payload);
 }

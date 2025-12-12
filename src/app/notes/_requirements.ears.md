@@ -1,20 +1,19 @@
-# Component requirements: Manual note page
+# Component requirements: Manual notes page
 
 ## Purpose
-Allows the user to submit manual notes that are ingested into Zep as manual source documents.
+Allow the user to submit ad-hoc notes for ingestion into Zep with clear feedback on success or failure.
 
 ## Inputs/Outputs
-- Submits `{ note }` to `/api/ingest/manual`.
-- Displays success or error status for the ingestion attempt.
+- Renders `ManualNoteForm` which posts to `/api/ingest/manual`.
+- Displays loading state and success/error messages.
 
 ## External dependencies
-- Manual ingestion API.
-- Tailwind + shadcn components for layout and controls.
+- `/api/ingest/manual` BFF endpoint.
+- shadcn/ui components.
 
 ## EARS coverage
 - REQ-G-001, REQ-G-003, REQ-G-011, REQ-G-020, REQ-C-020.
 
 ## Traceability
-- Implementation: `page.tsx` consuming `ManualNoteForm`.
-- Dependencies: `@/components/notes/manual-note-form`.
-- Assumptions: Authentication is stubbed; UI relies on optimistic feedback.
+- Implementation: `page.tsx` using `ManualNoteForm` at `@/components/notes/manual-note-form`.
+- Assumptions: Note body is free-form text; backend handles metadata enrichment.

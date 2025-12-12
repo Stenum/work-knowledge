@@ -1,20 +1,19 @@
 # Component requirements: /api/ingest/manual
 
 ## Purpose
-Receives manual notes from the UI and ingests them into Zep with metadata identifying the manual source.
+Accept manual notes from the UI and ingest them into Zep (or the in-memory queue) with consistent metadata.
 
 ## Inputs/Outputs
 - **POST /api/ingest/manual** accepts `{ note: string }`.
-- Returns `{ id: string, ingestedAt: string }` representing the stored belief.
+- Returns `{ id: string, ingestedAt: string }`.
 
 ## External dependencies
-- Zep client stub for ingestion.
-- Zod schema for boundary validation.
+- `@/lib/services/zep-client` to persist the note.
 
 ## EARS coverage
-- REQ-H-001, REQ-H-002, REQ-H-010, REQ-C-020, REQ-C-030.
+- REQ-H-001, REQ-H-002, REQ-H-010, REQ-C-020, REQ-C-030, REQ-I-001.
 
 ## Traceability
-- Implementation: `route.ts` (validates payload, invokes ingestion helper).
-- Dependencies: `@/lib/schemas/ingest`, `@/lib/services/zep-client`.
-- Assumptions: Persistence is in-memory for the MVP; production would persist to Zep.
+- Implementation: `route.ts` (validates payload and logs correlation ID).
+- Dependencies: `@/lib/services/zep-client`, `@/lib/schemas/ingest`.
+- Assumptions: Zep credentials optional; ingestion is still stored locally if remote call fails.
